@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Domain Block</title>
+	<link rel="stylesheet" href="./assets/css/popup.css">
+</head>
+<body>
+		<section  style="margin-bottom:25px">
+			<div style="display: flex;">
+				<div style="padding: 5px 5px 5px 0;min-width: 180px;width:50%">
+					<label>
+						<small>Website Address</small>
+					</label>
+					<input type="text" id="site-url" />
+					<span id="siteUrlError"></span>
+				</div>
+				
+				<div style="padding:5px 0 5px 5px" id="domain-entry-wrapper">
+					
+						<small>Request Domain to block</small>
+					<div class="domain-entry-group" id="group-1">
+						<input type="text" class="domain-to-block" />
+						<span class="domain-input-error"></span>
+						<!-- <button class="remove-domain" data-close-nope="group-1" >x</button> -->
+					</div>
+				</div>
+			</div>
+			<div style="margin-top:15px;text-align: right;">
+				<button id="add-domain" >Add Domain</button>
+				<button id="save-entry" >Save & Block</button>
+			</div>
+		</section>
+		<section>
+			<h3 style="text-align:center">Block List</h3>
+			<table style="table-layout: fixed;">
+				<thead>
+					<tr >
+						<th style="width:40%">Site</th>
+					<th style="width:60%">Domains</th>
+				</tr>
+				</thead>
+				<tbody id="block-list-entries">
+					
+				</tbody>
+			</table>
+		</section>
+		<script src="./assets/js/common_funcs.js"></script>
+		<script src="./assets/js/popup.js"></script>
+</body>
+</html>

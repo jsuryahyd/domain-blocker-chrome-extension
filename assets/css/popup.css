@@ -1,0 +1,88 @@
+html,*{
+	box-sizing: border-box;
+}
+
+body{
+	margin: 0;
+	padding: 25px;
+	color:white;
+	background-color: #333;
+	width:40%;
+	min-width:450px
+}
+
+input[type="text"]{
+	background-color: transparent;
+	border:1px solid cyan;
+	padding:0.5rem 0.75rem;
+	border-radius: 2px;
+	color:white;
+	width:100%;
+}
+
+input:focus{
+	outline-color: teal;
+}
+
+button{
+	background-color:  cyan;
+	border:none;
+	padding:0.5rem 0.75rem;
+	border-radius: 2px;
+}
+
+#domain-entry-wrapper{
+	width:50%;
+	min-width:180px
+}
+
+input.domain-to-block{
+	flex-basis:80%;
+}
+.domain-entry-group:first-of-type input.domain-to-block{
+	flex-basis:100%;
+}
+.remove-domain{
+	flex-basis: 20%;
+}
+.domain-entry-group{
+	display: flex;
+	flex-wrap: wrap;
+	margin-bottom: 15px;
+
+}
+
+.domain-entry-group input+span{
+	flex-basis:100%;
+	order:3
+}
+
+input.domain-to-block:not(:first-of-type){
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.remove-domain{
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+table{
+	table-layout: fixed;
+	width:100%;
+	border-collapse: collapse;
+}
+
+th{
+	text-align:left
+}
+
+table th,table td{
+	border:1px solid #ccc;
+	padding:0.25rem;
+	word-wrap: break-word;
+}
+
+#siteUrlError,.domain-input-error{
+	color:red;
+}
