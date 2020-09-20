@@ -27,18 +27,26 @@
 					</div>
 				</div>
 			</div>
-			<div style="margin-top:15px;text-align: right;">
-				<button id="add-domain" >Add Domain</button>
-				<button id="save-entry" >Save & Block</button>
+			<div id="btns-container" data-edit="none">
+				<div id="add-mode-btns" >
+					<button id="add-domain" >Add Domain</button>
+					<button id="save-entry" style="margin-left:15px" >Save & Block</button>
+				</div>
+				<div id="edit-mode-btns" >
+					<!-- <button id="add-domain" >Add Domain</button> todo: -->
+					<button id="remove-entry" >Remove Entry</button>
+					<button id="edit-entry" style="margin-left:15px"  >Save & Block</button><!-- same func as add -->
+				</div>
 			</div>
 		</section>
-		<section>
+		<section id="entries-section">
 			<h3 style="text-align:center">Block List</h3>
-			<table style="table-layout: fixed;">
+			<table style="table-layout: fixed;" >
 				<thead>
 					<tr >
 						<th style="width:40%">Site</th>
-					<th style="width:60%">Domains</th>
+						<th style="width:60%">Domains</th>
+						<th style="width:20%"></th>
 				</tr>
 				</thead>
 				<tbody id="block-list-entries">
@@ -46,7 +54,8 @@
 				</tbody>
 			</table>
 		</section>
-		<script src="./assets/js/common_funcs.js"></script>
+		<script async="false" src="./assets/js/common_funcs.js"></script>
+		<script async="false" src="./assets/js/models/blockEntry.js"></script>
 		<script src="./assets/js/popup.js"></script>
 </body>
 </html>
