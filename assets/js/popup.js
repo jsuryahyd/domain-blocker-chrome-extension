@@ -1,11 +1,8 @@
 /// <reference path="../../chrome.d.ts"/>
 function Popup() {
-
-
-
   const siteInput = document.getElementById("site-url");
   const siteUrlError = document.getElementById("siteUrlError");
-
+  let btnContainer = document.getElementById("btns-container");
   const addDomainBtn = document.getElementById("add-domain");
   const saveItem = document.getElementById("save-entry");
   const editItem = document.getElementById("edit-entry");
@@ -43,67 +40,20 @@ function Popup() {
         }
       }
     });
-    saveItem.addEventListener("click", () => {
-      const website = siteInput.value;
-      if (!is_url(website)) {
-        siteUrlError.innerHTML = "Please Input valid website address";
-        return;
-      } else {
-        siteUrlError.innerHTML = "";
-      }
-      const domains = [];
-      let domainErrors = false;
-      [...domainInputs()].forEach((i, idx) => {
-        const errorDisplay = document
-          .getElementsByClassName("domain-entry-group")
-          [idx].getElementsByClassName("domain-input-error")[0];
-        if (!is_url(i.value)) {
-          errorDisplay.innerHTML = "Invalid Domain Name";
-          domainErrors = true;
-        } else {
-          errorDisplay.innerHTML = "";
-          domains.push(i.value);
-        }
-      });
-      if (domainErrors) return;
-      addDomain(website, domains);
-    });
-    editItem.addEventListener("click", () => {
-      const website = siteInput.value;
-      if (!is_url(website)) {
-        siteUrlError.innerHTML = "Please Input valid website address";
-        return;
-      } else {
-        siteUrlError.innerHTML = "";
-      }
-      const domains = [];
-      let domainErrors = false;
-      [...domainInputs()].forEach((i, idx) => {
-        const errorDisplay = document
-          .getElementsByClassName("domain-entry-group")
-          [idx].getElementsByClassName("domain-input-error")[0];
-        if (!is_url(i.value)) {
-          errorDisplay.innerHTML = "Invalid Domain Name";
-          domainErrors = true;
-        } else {
-          errorDisplay.innerHTML = "";
-          domains.push(i.value);
-        }
-      });
-      if (domainErrors) return;
-      let editId;
-      let btnContainer = document.getElementById("btns-container");
-      try{
-        editId = btnContainer.getAttribute("data-edit").split("id-")[1]
-      }catch(e){
-        console.log("no edit for you ",)
-      }
-      editEntry(website, domains,editId);      
+    saveItem.addEventListener("click", saveEntry);
+    editItem.addEventListener("click", ()=>{
+      let editId
+      try {
+        editId = btnContainer.getAttribute("data-edit").split("id-")[1];
+      } catch (e) {
+        console.log("no edit for you ");
+      } 
+      saveEntry(editId);
     });
 
     removeEntry.addEventListener("click", async () => {
       let removeId;
-      let btnContainer = document.getElementById("btns-container");
+      
       try {
         removeId = btnContainer.getAttribute("data-edit").split("id-")[1];
       } catch (e) {
@@ -123,6 +73,39 @@ function Popup() {
       clearInputs();
       showEntries();
     });
+  }
+
+  function saveEntry(editId) {
+    const website = siteInput.value;
+    const validationErr = validateUrl(website);
+    if (validationErr) {
+      siteUrlError.innerHTML =
+        validationErr || "Please Input valid website address";
+      return;
+    } else {
+      siteUrlError.innerHTML = "";
+    }
+    const domains = [];
+    let domainErrors = false;
+    [...domainInputs()].forEach((i, idx) => {
+      const errorDisplay = document
+        .getElementsByClassName("domain-entry-group")
+        [idx].getElementsByClassName("domain-input-error")[0];
+      const validationErr = validateUrl(i.value);
+        if (validationErr) {
+        errorDisplay.innerHTML = validationErr|| "Invalid Domain Name";
+        domainErrors = true;
+      } else {
+        errorDisplay.innerHTML = "";
+        domains.push(i.value);
+      }
+    });
+    if (domainErrors) return;
+    let btnContainer = document.getElementById("btns-container");
+
+   
+      editEntry(website, domains, editId);
+    
   }
 
   function addDomainInput() {
@@ -146,59 +129,25 @@ function Popup() {
     else console.error("no el", el, closeId);
   }
 
-  async function addDomain(website, domains) {
+  
+
+  async function editEntry(website, domains, editId) {
     website = (website || "").trim().replace(/\/+$/, "");
 
     const data = await loadFromStorage(["blocked"]);
     const oldValues = (data.blocked || []).filter((i) => !!i && !!i.website);
     let newValues = [...oldValues];
-    let alreadyPresentIdx = oldValues.findIndex((i) => i.website == website);
+    let alreadyPresentIdx = oldValues.findIndex((i) => i.id == editId || i.website == website);
     if (alreadyPresentIdx != -1) {
       newValues = newValues.map((e, idx) => {
-        return idx == alreadyPresentIdx ? { ...e, blockDomains: domains } : e;
+        return idx == alreadyPresentIdx ? { ...e,website:website, blockDomains: domains } : e;
       });
     } else {
       newValues = [
         ...newValues,
         {
-          website: website,
-          blockDomains: domains,
-          blockWebsite: false, //todo: not using this!!!
-          id: Date.now() + "" + getUniqueNumber(),
-        },
-      ];
-    }
-
-    saveItem.setAttribute("disabled", true);
-    editItem.setAttribute("disabled", true);
-    const saved = await saveToStorage({
-      blocked: newValues,
-    });
-    saveItem.removeAttribute("disabled");
-    editItem.removeAttribute("disabled");
-    showEntries();
-    clearInputs();
-    // console.log("*********", await loadFromStorage(["blocked"]));
-  }
-
-  async function editEntry(website, domains,editId) {
-    website = (website || "").trim().replace(/\/+$/, "");
-
-    const data = await loadFromStorage(["blocked"]);
-    const oldValues = (data.blocked || []).filter((i) => !!i && !!i.website);
-    let newValues = [...oldValues];
-    let alreadyPresentIdx = oldValues.findIndex((i) => i.id == editId);
-    if (alreadyPresentIdx != -1) {
-      newValues = newValues.map((e, idx) => {
-        return idx == alreadyPresentIdx ? { ...e, blockDomains: domains } : e;
-      });
-    } else {
-      newValues = [
-        ...newValues,
-        {
-          website: website,
-          blockDomains: domains,
-          blockWebsite: false,
+          url: website,
+          domainsToBlock: domains,
           id: Date.now() + "" + getUniqueNumber(),
         },
       ];
@@ -225,39 +174,45 @@ function Popup() {
       if (idx == 0) el.getElementsByTagName("input")[0].value = "";
       else el.remove();
     });
+
+    document
+    .getElementById("btns-container")
+    .setAttribute("data-edit", "none");
   }
 
   async function showEntries() {
     const data = await loadFromStorage(["blocked"]);
     // entriesContainer.innerHTML = JSON.stringify(data, null, 2);
-    if(!data.blocked || !data.blocked.length){
-      entriesTable.style.display = "none"
-    }else{
-      entriesTable.style.display = "table"
+    if (!data.blocked || !data.blocked.length) {
+      entriesTable.style.display = "none";
+    } else {
+      entriesTable.style.display = "table";
     }
     entriesContainer.innerHTML = (data.blocked || [])
       .reverse()
       .reduce((html, w) => {
         if (!w) return html;
+        const entry = new BlockEntry(w).toMap()
         return (
           html +
           `<tr style="height:100%">
-			<td>${w.website}</td>
-      <td>${w.blockDomains.join(", ")}</td>
+			<td>${entry.url}</td>
+      <td>${entry.domainsToBlock.join(", ")}</td>
       <td style="padding:0;height:0"><button class="edit-btn"  data-edit="${
-        w.id
+        entry.id
       }">Edit</button></td>
 			</tr>`
         );
       }, "");
   }
 
-  function populateEntryValues(entry) {
-    const entryValues = new BlockEntry(entry);
-    siteInput.value = entryValues.website;
+
+  function populateEntryValues(entryValues) {
+    const entry = new BlockEntry(entryValues);
+    siteInput.value = entry.originalUrl;
     // first domain entry
     document.getElementsByClassName("domain-to-block")[0].value =
-      entryValues.blockDomains[0];
+      entry.domainsToBlock[0];
 
     /* all other domain entries
         - 1)clear any existing inputs
@@ -270,10 +225,10 @@ function Popup() {
       ...document.getElementsByClassName("additional-entry-group"),
     ].forEach((e) => e.remove());
     //(2)
-    const additionalDomainsHtml = entryValues.blockDomains
+    const additionalDomainsHtml = entry.domainsToBlock
       .slice(1)
       .map((d, idx) => {
-        return newInput(entryValues.id + idx, d);
+        return newInput(entry.id + idx, d);
       })
       .join("");
     document
@@ -283,7 +238,7 @@ function Popup() {
     //todo: instead set the id to remove-btn and get from there.
     document
       .getElementById("btns-container")
-      .setAttribute("data-edit", "id-" + entryValues.id);
+      .setAttribute("data-edit", "id-" + entry.id);
   }
 
   return {

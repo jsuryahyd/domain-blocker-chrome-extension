@@ -61,60 +61,103 @@ function saveToLocal(data) {
 //  * @property {string} requestDetails.type
 //  * @property {string} requestDetails.url
 //  */
-function DomainBlockerBackground(){
+function DomainBlockerBackground() {
+  let blockListener;
 
-let blockListener;
+  async function initBlocking() {
+    if (
+      blockListener &&
+      chrome.webRequest.onBeforeRequest.hasListener(blockListener)
+    ) {
+      console.log("removing old listener");
+      chrome.webRequest.onBeforeRequest.removeListener(blockListener);
+    }
+    const w = await loadFromStorage(["blocked"]);
+    const entries = w.blocked;
+    if (!entries) {
+      console.log("no entries in storage : ", w);
+      return false;
+    }
+    blockListener = (details) => {
+      const req = new URL(details.url);
+      const initiator = details.initiator;
 
-	async function initBlocking() {
-	
-		if(blockListener && chrome.webRequest.onBeforeRequest.hasListener(blockListener)){
-			console.log("removing old listener");
-			chrome.webRequest.onBeforeRequest.removeListener(blockListener)
-		}
-			const w = await loadFromStorage(["blocked"]);
-		const blocking = w.blocked;
-		blockListener = 	(details) => {
-			// console.log("request details",details);
-			const url = new URL(details.url);
-			const initiator = details.initiator;
-			if(!blocking) return;
-			const entry = blocking.find((b) => b.website == initiator);
-			if (!entry ) return;
-			entry.blockDomains.forEach((d) => console.log([d, url.hostname]))
-			//todo: domains may be urls or domain names, handle it
-			if (entry.blockDomains.find((d) => d == url.hostname)) {
-				console.log("blovking--", url);
-				return { cancel: true };
+      //todo: entryItem has to be checked if given page url  instead of website
+
+      const entryItem = (entries || []).find((b) => {
+        return b.url.indexOf("http") == -1
+          ? initiator.indexOf(b.url) != -1
+          : b.url == initiator;
+      });
+      if (!entryItem) return;
+      console.log("request details", details);
+      let block = false;
+      block = !!entryItem.domainsToBlock.find((d) => {
+        const url = new URL(d.indexOf("http") == -1 ? "http://" + d : d);
+        return (
+          (d.indexOf("http") == -1 ? "" : url.protocol + "//") +
+            url.hostname +
+            url.pathname ==
+          (d.indexOf("http") == -1 ? "" : req.protocol + "//") +
+            req.hostname +
+            (url.pathname == "/" ? url.pathname : req.pathname)//consider req pathname only if given unwanted url is a specific url instead of a domain
+        );
+      });
+      if (block) {
+        console.log("(((((((((((((((( blocked request ))))))))))))))))", details, entryItem);
+        return { cancel: true };
+      }else{
+				console.log(" XXXXXXXXXXXXXXXXXXX not blocking XXXXXXXXXXXXXXXXXX",details,entryItem)
 			}
-		}
-		chrome.webRequest.onBeforeRequest.addListener(
-			blockListener,
-			{ urls: ["<all_urls>"] },//todo: only blocked domains regexes list
-    ["blocking"]
-	);
+    };
+    chrome.webRequest.onBeforeRequest.addListener(
+      blockListener,
+      {
+        urls: getUrlPatterns(
+          entries.reduce((t, e) => [...t, ...e.domainsToBlock], [])
+        ),
+      }, //todo: only blocked domains regexes list
+      ["blocking"]
+    );
 
-	console.log("added listener...");
-	const w1 = await loadFromStorage(["blocked"]);
-	const blocking1 = w.blocked;
-	console.log("new blocking",blocking1)
+    console.log("added listener...");
+    const w1 = await loadFromStorage(["blocked"]);
+    const blocking1 = w.blocked;
+    console.log("new blocking", blocking1);
+  }
+
+  function getUrlPatterns(req) {
+    const patterns = req.reduce((u, e, idx) => {
+      try {
+        const url = new URL(e.indexOf("http") == -1 ? "http://" + e : e);
+        return [
+          ...u,
+          e.indexOf("http") == -1 //is protocol included by user while inputting domains
+            ? "*://" + url.hostname + url.pathname + "*" //star at begin and ending
+            : url.protocol + "//" + url.hostname + url.pathname + "*", //star only at end
+        ];
+      } catch (err) {
+        console.error(err + " | " + JSON.stringify(req));
+        return u;
+      }
+    }, []);
+    console.log("patterns", patterns);
+    return patterns;
+    // return ["<all_urls>"];
+  }
+
+  return { initBlocking };
 }
-
-
-
-
-return {initBlocking}
-}
-const dbg  = DomainBlockerBackground()
+const dbg = DomainBlockerBackground();
 
 dbg.initBlocking();
 
-
-chrome.storage.onChanged.addListener(function(changes, namespace) {
-	console.log(changes,namespace)
-	for(var key in changes) {
-		if(key === 'blocked') {
-			// Do something here
-			dbg.initBlocking();
-		}
-	}
+chrome.storage.onChanged.addListener(function (changes, namespace) {
+  console.log(changes, namespace);
+  for (var key in changes) {
+    if (key === "blocked") {
+      // Do something here
+      dbg.initBlocking();
+    }
+  }
 });
