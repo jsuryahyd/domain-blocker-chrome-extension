@@ -29,6 +29,7 @@ button{
 	border:none;
 	padding:0.5rem 0.75rem;
 	border-radius: 2px;
+	cursor: pointer;
 }
 
 #domain-entry-wrapper{
@@ -37,13 +38,16 @@ button{
 }
 
 input.domain-to-block{
-	flex-basis:80%;
+	flex-basis:calc(80% - 10px);
 }
 .domain-entry-group:first-of-type input.domain-to-block{
 	flex-basis:100%;
 }
 .remove-domain{
-	flex-basis: 20%;
+	flex-basis: calc(20%);
+	margin-left: auto;
+	/* border-top-left-radius: 0;
+	border-bottom-left-radius: 0; */
 }
 .domain-entry-group{
 	display: flex;
@@ -60,11 +64,6 @@ input.domain-to-block{
 input.domain-to-block:not(:first-of-type){
 	border-top-right-radius: 0;
 	border-bottom-right-radius: 0;
-}
-
-.remove-domain{
-	border-top-left-radius: 0;
-	border-bottom-left-radius: 0;
 }
 
 table{
@@ -96,6 +95,11 @@ table th,table td{
 
 .edit-btn:focus,.edit-btn:active{
 	outline:none
+}
+
+#remove-entry{
+	background-color: #FF0000;
+	color: white;
 }
 
 #btns-container{

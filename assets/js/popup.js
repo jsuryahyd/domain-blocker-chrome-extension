@@ -113,6 +113,8 @@ function Popup() {
     document
       .getElementById("domain-entry-wrapper")
       .insertAdjacentHTML("beforeend", newInput(dynamicId));
+      const input = document.querySelector(`#group-${dynamicId} input`);
+     input && input.focus();
   }
 
   function newInput(dynamicId, value = "") {
@@ -135,9 +137,9 @@ function Popup() {
     website = (website || "").trim().replace(/\/+$/, "");
 
     const data = await loadFromStorage(["blocked"]);
-    const oldValues = (data.blocked || []).filter((i) => !!i && !!i.website);
+    const oldValues = (data.blocked || []).filter((i) => !!i && !!i.url);
     let newValues = [...oldValues];
-    let alreadyPresentIdx = oldValues.findIndex((i) => i.id == editId || i.website == website);
+    let alreadyPresentIdx = oldValues.findIndex((i) => i.id == editId || i.url == website);
     if (alreadyPresentIdx != -1) {
       newValues = newValues.map((e, idx) => {
         return idx == alreadyPresentIdx ? { ...e,website:website, blockDomains: domains } : e;
