@@ -1,6 +1,10 @@
 /// <reference path="../../chrome.d.ts"/>
+/// <reference path="./common_funcs.js"/>
+/// <reference path="./models/blockEntry.js"/>
 function Popup() {
-  const siteInput = document.getElementById("site-url");
+  const /** @type {HTMLInputElement}*/ siteInput = document.getElementById(
+      "site-url"
+    );
   const siteUrlError = document.getElementById("siteUrlError");
   let btnContainer = document.getElementById("btns-container");
   const addDomainBtn = document.getElementById("add-domain");
@@ -12,6 +16,15 @@ function Popup() {
 
   const entriesContainer = document.getElementById("block-list-entries");
   const removeEntry = document.getElementById("remove-entry");
+
+  const analyzeLink = document.getElementById("analyze_link");
+  const blockListLink = document.getElementById("block_list_link");
+
+  const reloadPage = document.getElementById("reloadPage");
+  const blockPageDomains = document.getElementById("block-page-domains");
+
+  let analyzeListener;
+  let page = { domain: "", requests: [] };
 
   function addClickListeners() {
     addDomainBtn.addEventListener("click", addDomainInput);
@@ -41,19 +54,19 @@ function Popup() {
       }
     });
     saveItem.addEventListener("click", saveEntry);
-    editItem.addEventListener("click", ()=>{
-      let editId
+    editItem.addEventListener("click", () => {
+      let editId;
       try {
         editId = btnContainer.getAttribute("data-edit").split("id-")[1];
       } catch (e) {
         console.log("no edit for you ");
-      } 
+      }
       saveEntry(editId);
     });
 
     removeEntry.addEventListener("click", async () => {
       let removeId;
-      
+
       try {
         removeId = btnContainer.getAttribute("data-edit").split("id-")[1];
       } catch (e) {
@@ -72,6 +85,66 @@ function Popup() {
       btnContainer.setAttribute("data-edit", "none");
       clearInputs();
       showEntries();
+    });
+
+    analyzeLink.addEventListener("click", () => {
+      //add classNames
+      document.body.setAttribute("data-route", "analyze-page");
+      chrome.tabs.query({ active: true, currentWindow: true }, function (
+        arrayOfTabs
+      ) {
+        console.log(arrayOfTabs);
+        // chrome.tabs.reload(arrayOfTabs[0].id);
+        const tabInfo = arrayOfTabs[0];
+        showPageInfo(tabInfo);
+        if (
+          analyzeListener &&
+          chrome.webRequest.onBeforeRequest.hasListener(analyzeListener)
+        ) {
+          chrome.webRequest.onBeforeRequest.removeListener(analyzeListener);
+        }
+        analyzeListener = addRequestsListener(arrayOfTabs[0].id);
+        console.log(analyzeListener);
+        chrome.runtime.sendMessage(
+          { type: "pageAnalysisListener", analyzeListener },
+          (res) => {
+            console.log(res);
+          }
+        );
+        // setTimeout(()=>{console.log(page.requests)},5000)
+      });
+    });
+
+    blockListLink.addEventListener("click", () => {
+      document.body.setAttribute("data-route", "block-list");
+    });
+
+    reloadPage.addEventListener("click", () => {
+      chrome.tabs.reload((...args) => {
+        console.log("reloaded", args);
+      });
+    });
+
+    document.body.addEventListener("change", (e) => {
+      if (e.target.getAttribute("name") == "to-block") {
+        const toBlock = [...document.getElementsByName("to-block")]
+          .filter((el) => el.checked)
+          .map((el) => el.value);
+        if (toBlock.length) {
+          document.getElementById("block-page-domains").style.display =
+            "initial";
+        } else {
+          document.getElementById("block-page-domains").style.display = "none";
+        }
+      }
+    });
+
+    blockPageDomains.addEventListener("click", () => {
+      const toBlock = [...document.getElementsByName("to-block")]
+        .filter((el) => el.checked)
+        .map((el) => el.value);
+      editEntry(page.domain, toBlock);
+      document.body.setAttribute("data-route", "block-list");
     });
   }
 
@@ -92,8 +165,8 @@ function Popup() {
         .getElementsByClassName("domain-entry-group")
         [idx].getElementsByClassName("domain-input-error")[0];
       const validationErr = validateUrl(i.value);
-        if (validationErr) {
-        errorDisplay.innerHTML = validationErr|| "Invalid Domain Name";
+      if (validationErr) {
+        errorDisplay.innerHTML = validationErr || "Invalid Domain Name";
         domainErrors = true;
       } else {
         errorDisplay.innerHTML = "";
@@ -103,9 +176,7 @@ function Popup() {
     if (domainErrors) return;
     let btnContainer = document.getElementById("btns-container");
 
-   
-      editEntry(website, domains, editId);
-    
+    editEntry(website, domains, editId);
   }
 
   function addDomainInput() {
@@ -113,8 +184,8 @@ function Popup() {
     document
       .getElementById("domain-entry-wrapper")
       .insertAdjacentHTML("beforeend", newInput(dynamicId));
-      const input = document.querySelector(`#group-${dynamicId} input`);
-     input && input.focus();
+    const input = document.querySelector(`#group-${dynamicId} input`);
+    input && input.focus();
   }
 
   function newInput(dynamicId, value = "") {
@@ -131,18 +202,20 @@ function Popup() {
     else console.error("no el", el, closeId);
   }
 
-  
-
   async function editEntry(website, domains, editId) {
     website = (website || "").trim().replace(/\/+$/, "");
 
     const data = await loadFromStorage(["blocked"]);
     const oldValues = (data.blocked || []).filter((i) => !!i && !!i.url);
     let newValues = [...oldValues];
-    let alreadyPresentIdx = oldValues.findIndex((i) => i.id == editId || i.url == website);
+    let alreadyPresentIdx = oldValues.findIndex(
+      (i) => i.id == editId || i.url == website
+    );
     if (alreadyPresentIdx != -1) {
       newValues = newValues.map((e, idx) => {
-        return idx == alreadyPresentIdx ? { ...e,website:website, blockDomains: domains } : e;
+        return idx == alreadyPresentIdx
+          ? { ...e, website: website, blockDomains: domains }
+          : e;
       });
     } else {
       newValues = [
@@ -177,9 +250,7 @@ function Popup() {
       else el.remove();
     });
 
-    document
-    .getElementById("btns-container")
-    .setAttribute("data-edit", "none");
+    document.getElementById("btns-container").setAttribute("data-edit", "none");
   }
 
   async function showEntries() {
@@ -194,7 +265,7 @@ function Popup() {
       .reverse()
       .reduce((html, w) => {
         if (!w) return html;
-        const entry = new BlockEntry(w).toMap()
+        const entry = new BlockEntry(w).toMap();
         return (
           html +
           `<tr style="height:100%">
@@ -207,7 +278,6 @@ function Popup() {
         );
       }, "");
   }
-
 
   function populateEntryValues(entryValues) {
     const entry = new BlockEntry(entryValues);
@@ -243,9 +313,79 @@ function Popup() {
       .setAttribute("data-edit", "id-" + entry.id);
   }
 
+  function showPageInfo(pageInfo) {
+    const url = new URL(pageInfo.url);
+    page.domain = url.protocol + "//" + url.hostname;
+    document.getElementById("domainName").innerHTML = page.domain;
+    document.getElementById("favicon").src = pageInfo.favIconUrl;
+    document.getElementById("pageUrl").innerHTML = pageInfo.url;
+  }
+
+  function addRequestsListener(tabId) {
+    const listener = (reqDetails) => {
+      console.log(reqDetails);
+      if (reqDetails.tabId == tabId) {
+        const _url = new URL(reqDetails.url);
+        const domain = _url.protocol + "//" + _url.hostname;
+        const domainIdx = page.requests.findIndex((r) => r.domain == domain);
+        if (domainIdx >= 0) {
+          page.requests[domainIdx].urls.push(_url);
+          // console.log(document.querySelector(
+          //   "#page-requests tbody tr[data-domain='" +
+          //     domain +
+          //     "'] ul"
+          // ));
+          // document.querySelector(
+          //   "#page-requests tbody tr[data-domain=" +
+          //     domain +
+          //     "] ul"
+          // ).innerHTML += `<li title="${
+          //   reqDetails.url
+          // }">${reqDetails.url.substr(0, 150)+"..."}</li>`;
+          document.querySelector(
+            '#page-requests tbody tr[data-domain="' + domain + '"]'
+          ).innerHTML = `<td><label><input type="checkbox" value="${domain}" name="to-block" />${domain}</label></td><td><ul>${page.requests[
+            domainIdx
+          ].urls
+            .map((r) => {
+              console.log(r.href);
+              return `<li title="${r.href}">${
+                r.href.substr(0, 150) + "..."
+              }</li>`;
+            })
+            .join("")}</ul></td>`;
+        } else {
+          page.requests.push({ domain, urls: [_url] });
+          document.querySelector(
+            "#page-requests tbody"
+          ).innerHTML += `<tr data-domain="${domain}"><td><label><input type="checkbox" value="${domain}" name="to-block" />${domain}</label></td><td><ul><li title="${
+            reqDetails.url
+          }">${reqDetails.url.substr(0, 150) + "..."}</li></ul></td></tr>`;
+        }
+      }
+    }
+    chrome.webRequest.onBeforeRequest.addListener(
+      listener,
+      { urls: ["<all_urls>"] }
+    );
+    return listener;
+  }
+
+  function removeListeners() {
+    // alert('remove listeners')
+    if (
+      analyzeListener &&
+      chrome.webRequest.onBeforeRequest.hasListener(analyzeListener)
+    ) {
+      // alert('removed');
+      chrome.webRequest.onBeforeRequest.removeListener(analyzeListener);
+    }
+  }
+
   return {
     addClickListeners,
     showEntries,
+    removeListeners,
   };
 }
 
@@ -253,6 +393,7 @@ window.addEventListener("load", function () {
   const popup = Popup();
   popup.addClickListeners();
   popup.showEntries();
+  window.addEventListener("beforeunload", popup.removeListeners);
 });
 
 // chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {

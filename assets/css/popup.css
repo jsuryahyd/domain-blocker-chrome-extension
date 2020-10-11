@@ -1,120 +1,194 @@
-html,*{
-	box-sizing: border-box;
+html,
+* {
+  box-sizing: border-box;
 }
 
-body{
-	margin: 0;
-	padding: 25px;
-	color:white;
-	background-color: #333;
-	width:40%;
-	min-width:450px
+body {
+  margin: 0;
+  color: white;
+  background-color: #333;
+  width: 40%;
+	min-width: 450px;
+	position: relative;
 }
 
-input[type="text"]{
-	background-color: transparent;
-	border:1px solid cyan;
-	padding:0.5rem 0.75rem;
-	border-radius: 2px;
-	color:white;
-	width:100%;
+input[type="text"] {
+  background-color: transparent;
+  border: 1px solid cyan;
+  padding: 0.5rem 0.75rem;
+  border-radius: 2px;
+  color: white;
+  width: 100%;
 }
 
-input:focus{
-	outline-color: teal;
+input:focus {
+  outline-color: teal;
 }
 
-button{
-	background-color:  cyan;
-	border:none;
-	padding:0.5rem 0.75rem;
-	border-radius: 2px;
-	cursor: pointer;
+button {
+  background-color: cyan;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 2px;
+  cursor: pointer;
 }
 
-#domain-entry-wrapper{
-	width:50%;
-	min-width:180px
+#domain-entry-wrapper {
+  width: 50%;
+  min-width: 180px;
 }
 
-input.domain-to-block{
-	flex-basis:calc(80% - 10px);
+input.domain-to-block {
+  flex-basis: calc(80% - 10px);
 }
-.domain-entry-group:first-of-type input.domain-to-block{
-	flex-basis:100%;
+.domain-entry-group:first-of-type input.domain-to-block {
+  flex-basis: 100%;
 }
-.remove-domain{
-	flex-basis: calc(20%);
-	margin-left: auto;
-	/* border-top-left-radius: 0;
+.remove-domain {
+  flex-basis: calc(20%);
+  margin-left: auto;
+  /* border-top-left-radius: 0;
 	border-bottom-left-radius: 0; */
 }
-.domain-entry-group{
-	display: flex;
-	flex-wrap: wrap;
-	margin-bottom: 15px;
-
+.domain-entry-group {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
 }
 
-.domain-entry-group input+span{
-	flex-basis:100%;
-	order:3
+.domain-entry-group input + span {
+  flex-basis: 100%;
+  order: 3;
 }
 
-input.domain-to-block:not(:first-of-type){
-	border-top-right-radius: 0;
-	border-bottom-right-radius: 0;
+input.domain-to-block:not(:first-of-type) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
-table{
-	table-layout: fixed;
-	width:100%;
-	border-collapse: collapse;
+table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
 }
 
-th{
-	text-align:left
+th {
+  text-align: left;
 }
 
-table th,table td{
-	border:1px solid #ccc;
-	padding:0.25rem;
-	word-wrap: break-word;
+table th,
+table td {
+  border: 1px solid #ccc;
+  padding: 0.25rem;
+  word-wrap: break-word;
 }
 
-#siteUrlError,.domain-input-error{
-	color:red;
+#siteUrlError,
+.domain-input-error {
+  color: red;
 }
-.edit-btn{
-	padding:0;
-	width:100%;
-	height: 100%;
-	/* color:white; */
-	border-radius:0;
-}
-
-.edit-btn:focus,.edit-btn:active{
-	outline:none
+.edit-btn {
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  /* color:white; */
+  border-radius: 0;
 }
 
-#remove-entry{
-	background-color: #FF0000;
-	color: white;
+.edit-btn:focus,
+.edit-btn:active {
+  outline: none;
 }
 
-#btns-container{
-	margin-top:15px;
-	display: flex;
-	justify-content: space-between;
+#remove-entry {
+  background-color: #ff0000;
+  color: white;
 }
 
-#btns-container[data-edit='none'] .edit-mode-btn{
-	display: none;
-	
+#btns-container {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+#btns-container[data-edit="none"] .edit-mode-btn {
+  display: none;
+}
+
+#btns-container[data-edit*="id-"] .add-mode-btn {
+  display: none;
+}
+
+main{
+	transition: transform 0.3s ease-in-out;
+	padding: 25px;
+	position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+body[data-route="block-list"] .block-list {
+  /* transform: translateX(100%); */
+ 
+}
+
+body[data-route="block-list"] .analyze-page {
+  transform: translateX(100%);
+}
+
+body[data-route="analyze-page"] .block-list {
+	transform: translateX(-100%);
  }
 
- #btns-container[data-edit*='id-'] .add-mode-btn{
-	 display: none;
+body[data-route="analyze-page"] .analyze-page {
+ transform: translateX(0);
+ /* min-height: 350px; */
 }
 
+#analyze_link{
+	position: relative;
+	bottom:16px;
+	float:right;
+	
+}
+#block_list_link{
+	position: relative;
+	bottom:16px;
+	float:left;
+	
+}
 
+.nav-link{
+	color:#ccc
+}
+
+.nav-link:active,.nav-link:focus,.nav-link:hover{
+	color:#fff
+}
+#domainName{
+	margin-top:0;
+	margin-bottom:0;
+	margin-left: 5px;
+}
+
+#pageUrl{
+	text-align: center;
+	margin-top:0;
+}
+#favicon{
+	width:30px
+}
+
+#favicon[src=""]{
+	display: none;
+}
+
+#reloadPage{
+	display: block;
+	margin:auto;
+}
+
+#block-page-domains{
+	display: none;
+}

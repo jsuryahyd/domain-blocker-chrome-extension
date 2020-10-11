@@ -1,59 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Domain Block</title>
-	<link rel="stylesheet" href="./assets/css/popup.css">
-</head>
-<body>
-		<section  style="margin-bottom:25px">
-			<div style="display: flex;">
-				<div style="padding: 5px 5px 5px 0;min-width: 180px;width:50%">
-					<label>
-						<small>Website Address</small>
-					</label>
-					<input type="text" id="site-url" />
-					<span id="siteUrlError"></span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Domain Block</title>
+    <link rel="stylesheet" href="./assets/css/popup.css" />
+  </head>
+  <body class="body" data-route="block-list">
+    <main class="block-list">
+      <section style="margin-bottom: 25px">
+        <a href="#" id="analyze_link" class="nav-link"
+          >Analyze current Page</a
+        >
+        <div style="display: flex; width: 100%">
+          <div style="padding: 5px 5px 5px 0; min-width: 180px; width: 50%">
+            <label>
+              <small>Website Address</small>
+            </label>
+            <input type="text" id="site-url" />
+            <span id="siteUrlError"></span>
+          </div>
+
+          <div style="padding: 5px 0 5px 5px" id="domain-entry-wrapper">
+            <small>Request Domain to block</small>
+            <div class="domain-entry-group" id="group-1">
+              <input type="text" class="domain-to-block" />
+              <span class="domain-input-error"></span>
+              <!-- <button class="remove-domain" data-close-nope="group-1" >x</button> -->
+            </div>
+          </div>
+        </div>
+        <div id="btns-container" data-edit="none">
+          <button id="add-domain">Add Domain</button>
+          <button
+            id="save-entry"
+            style="margin-left: 15px"
+            class="add-mode-btn"
+          >
+            Save & Block
+          </button>
+
+          <button id="remove-entry" class="edit-mode-btn">Remove Entry</button>
+          <button
+            id="edit-entry"
+            style="margin-left: 15px"
+            class="edit-mode-btn"
+          >
+            Save & Block</button
+          ><!-- same func as add -->
+        </div>
+      </section>
+      <section id="entries-section">
+        <h3 style="text-align: center">Block List</h3>
+        <table style="table-layout: fixed">
+          <thead>
+            <tr>
+              <th style="width: 40%">Site</th>
+              <th style="width: 60%">Domains</th>
+              <th style="width: 20%"></th>
+            </tr>
+          </thead>
+          <tbody id="block-list-entries"></tbody>
+        </table>
+      </section>
+    </main>
+    <main class="analyze-page">
+      <a href="#" id="block_list_link" class="nav-link"
+        ><span style="font-size: 20px; text-decoration: none !important">
+          &#8592;</span
+        >
+        Back</a
+      >
+      <section>
+        <div style="display: flex;align-items: center;justify-content: center;">
+					<img src="" id="favicon"/>
+					<h2 id="domainName"></h2>
 				</div>
-				
-				<div style="padding:5px 0 5px 5px" id="domain-entry-wrapper">
-					
-						<small>Request Domain to block</small>
-					<div class="domain-entry-group" id="group-1">
-						<input type="text" class="domain-to-block" />
-						<span class="domain-input-error"></span>
-						<!-- <button class="remove-domain" data-close-nope="group-1" >x</button> -->
-					</div>
+				<p id="pageUrl"></p>
+				<table id="page-requests">
+					<thead>
+						<tr>
+							<th>Domain</th>
+							<th>Url</th>
+						</tr>
+					</thead>
+					<tbody>
+						
+					</tbody>
+				</table>
+				<div style="display: flex;justify-content: space-between;margin-top:25px;">
+					<button id="reloadPage">Reload to show requests</button>
+					<button id="block-page-domains">Block Request Domains</button>
 				</div>
-			</div>
-			<div id="btns-container" data-edit="none">
-				
-					<button id="add-domain"  >Add Domain</button>
-					<button id="save-entry" style="margin-left:15px" class="add-mode-btn" >Save & Block</button>
-			
-					<button id="remove-entry" class="edit-mode-btn" >Remove Entry</button>
-					<button id="edit-entry" style="margin-left:15px" class="edit-mode-btn"  >Save & Block</button><!-- same func as add -->
-			
-			</div>
-		</section>
-		<section id="entries-section">
-			<h3 style="text-align:center">Block List</h3>
-			<table style="table-layout: fixed;" >
-				<thead>
-					<tr >
-						<th style="width:40%">Site</th>
-						<th style="width:60%">Domains</th>
-						<th style="width:20%"></th>
-				</tr>
-				</thead>
-				<tbody id="block-list-entries">
-					
-				</tbody>
-			</table>
-		</section>
-		<script async="false" src="./assets/js/common_funcs.js"></script>
-		<script async="false" src="./assets/js/models/blockEntry.js"></script>
-		<script src="./assets/js/popup.js"></script>
-</body>
+      </section>
+    </main>
+    <script async="false" src="./assets/js/common_funcs.js"></script>
+    <script async="false" src="./assets/js/models/blockEntry.js"></script>
+    <script src="./assets/js/popup.js"></script>
+  </body>
 </html>

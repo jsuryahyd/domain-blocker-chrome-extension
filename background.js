@@ -15,13 +15,15 @@ chrome.browserAction.onClicked.addListener((tab) => {
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.type == "popupInit") console.log("popup");
-  console.log("message");
+  console.log("message",request,sender,sendResponse);
   console.log(
     sender.tab
       ? "from a content script:" + sender.tab.url
       : "from the extension"
   );
   if (request.greeting == "hello") sendResponse({ farewell: "goodbye" });
+
+  // if(request.)
   return true;
 });
 
@@ -116,7 +118,7 @@ function DomainBlockerBackground() {
         urls: getUrlPatterns(
           entries.reduce((t, e) => [...t, ...e.domainsToBlock], [])
         ),
-      }, //todo: only blocked domains regexes list
+      }, 
       ["blocking"]
     );
 
