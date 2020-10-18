@@ -1,31 +1,31 @@
-chrome.browserAction.onClicked.addListener((tab) => {
-  // chrome.tabs.executeScript({
-  //   file: "appIframe.js"
-  // });
-  // chrome.tabs.executeScript({
-  //   code:"console.log('executeScript')"
-  // })
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    console.log(tabs);
-    chrome.tabs.sendMessage(tabs[0].id, { openApp: true }, function (response) {
-      console.log("app opened response :", response);
-    });
-  });
-});
+// chrome.browserAction.onClicked.addListener((tab) => {
+//   // chrome.tabs.executeScript({
+//   //   file: "appIframe.js"
+//   // });
+//   // chrome.tabs.executeScript({
+//   //   code:"console.log('executeScript')"
+//   // })
+//   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+//     console.log(tabs);
+//     chrome.tabs.sendMessage(tabs[0].id, { openApp: true }, function (response) {
+//       console.log("app opened response :", response);
+//     });
+//   });
+// });
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-  if (request.type == "popupInit") console.log("popup");
-  console.log("message",request,sender,sendResponse);
-  console.log(
-    sender.tab
-      ? "from a content script:" + sender.tab.url
-      : "from the extension"
-  );
-  if (request.greeting == "hello") sendResponse({ farewell: "goodbye" });
+// chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+//   if (request.type == "popupInit") console.log("popup");
+//   console.log("message", request, sender, sendResponse);
+//   console.log(
+//     sender.tab
+//       ? "from a content script:" + sender.tab.url
+//       : "from the extension"
+//   );
+//   if (request.greeting == "hello") sendResponse({ farewell: "goodbye" });
 
-  // if(request.)
-  return true;
-});
+//   // if(request.)
+//   return true;
+// });
 
 // chrome.webNavigation.onCompleted.addListener(async (details)=>{
 
@@ -64,8 +64,9 @@ function saveToLocal(data) {
 //  * @property {string} requestDetails.url
 //  */
 function DomainBlockerBackground() {
+  // chrome.webRequest.onBeforeRequest.removeListener()//remove all listeners
   let blockListener;
-
+  let pageReqListener;
   async function initBlocking() {
     if (
       blockListener &&
@@ -102,15 +103,23 @@ function DomainBlockerBackground() {
             url.pathname ==
           (d.indexOf("http") == -1 ? "" : req.protocol + "//") +
             req.hostname +
-            (url.pathname == "/" ? url.pathname : req.pathname)//consider req pathname only if given unwanted url is a specific url instead of a domain
+            (url.pathname == "/" ? url.pathname : req.pathname) //consider req pathname only if given unwanted url is a specific url instead of a domain
         );
       });
       if (block) {
-        console.log("(((((((((((((((( blocked request ))))))))))))))))", details, entryItem);
+        console.log(
+          "(((((((((((((((( blocked request ))))))))))))))))",
+          details,
+          entryItem
+        );
         return { cancel: true };
-      }else{
-				console.log(" XXXXXXXXXXXXXXXXXXX not blocking XXXXXXXXXXXXXXXXXX",details,entryItem)
-			}
+      } else {
+        console.log(
+          " XXXXXXXXXXXXXXXXXXX not blocking XXXXXXXXXXXXXXXXXX",
+          details,
+          entryItem
+        );
+      }
     };
     chrome.webRequest.onBeforeRequest.addListener(
       blockListener,
@@ -118,7 +127,7 @@ function DomainBlockerBackground() {
         urls: getUrlPatterns(
           entries.reduce((t, e) => [...t, ...e.domainsToBlock], [])
         ),
-      }, 
+      },
       ["blocking"]
     );
 
@@ -148,8 +157,43 @@ function DomainBlockerBackground() {
     // return ["<all_urls>"];
   }
 
-  return { initBlocking };
+  function addPageRequestsListener(tabId) {
+    removePageRequestsListener();
+    pageReqListener = (reqDetails) => {
+      if (reqDetails.tabId == tabId) {
+        console.log("sending...", reqDetails.requestId);
+        // console.log("sending...",reqDetails.requestId)
+        chrome.runtime.sendMessage(
+          {
+            type: "pageRequestsList",
+            req: reqDetails,
+          },
+          (response) => {
+            if (response == undefined || Object.keys(response).length == 0)
+              return;
+          }
+        );
+      }
+    };
+
+    chrome.webRequest.onBeforeRequest.addListener(pageReqListener, {
+      urls: ["<all_urls>"],
+    });
+    return pageReqListener;
+  }
+
+  function removePageRequestsListener() {
+    if (
+      pageReqListener &&
+      chrome.webRequest.onBeforeRequest.hasListener(pageReqListener)
+    ) {
+      chrome.webRequest.onBeforeRequest.removeListener(pageReqListener);
+    }
+  }
+
+  return { initBlocking, addPageRequestsListener, removePageRequestsListener };
 }
+
 const dbg = DomainBlockerBackground();
 
 dbg.initBlocking();
@@ -163,3 +207,42 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
     }
   }
 });
+
+// chrome.runtime.onMessage.addListener(({ type, tabId }) => {
+//   if (type == "pageAnalysisListener") {
+//     console.log("pageAnalyzelistener request",tabId);
+//     dbg.addPageRequestsListener(tabId);
+//   }
+//   if(type == "removePageReqListener"){
+//     console.log("requet to remove")
+//   }
+//   return Promise.resolve("sure");
+
+// });
+
+//todo: make this work
+chrome.runtime.onConnect.addListener((port) => {
+  console.log("port", port);
+  port.onDisconnect.addListener((p) => {
+    console.log("removing");
+    dbg.removePageRequestsListener();
+  });
+  port.onMessage.addListener(({ type, tabId }) => {
+    if (type == "pageAnalysisListener") {
+      console.log("pageAnalyzelistener request", tabId);
+      dbg.addPageRequestsListener(tabId);
+    }
+    if (type == "removePageReqListener") {
+      console.log("requet to remove");
+    }
+
+    return Promise.resolve("sure");
+  });
+});
+
+// chrome.runtime.connect({ name: "sample connection" });
+
+chrome.runtime.connect();
+chrome.browserAction.onClicked.addListener(tab=>{
+
+})

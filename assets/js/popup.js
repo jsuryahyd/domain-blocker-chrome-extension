@@ -23,7 +23,6 @@ function Popup() {
   const reloadPage = document.getElementById("reloadPage");
   const blockPageDomains = document.getElementById("block-page-domains");
 
-  let analyzeListener;
   let page = { domain: "", requests: [] };
 
   function addClickListeners() {
@@ -97,18 +96,12 @@ function Popup() {
         // chrome.tabs.reload(arrayOfTabs[0].id);
         const tabInfo = arrayOfTabs[0];
         showPageInfo(tabInfo);
-        if (
-          analyzeListener &&
-          chrome.webRequest.onBeforeRequest.hasListener(analyzeListener)
-        ) {
-          chrome.webRequest.onBeforeRequest.removeListener(analyzeListener);
-        }
-        analyzeListener = addRequestsListener(arrayOfTabs[0].id);
-        console.log(analyzeListener);
+       
         chrome.runtime.sendMessage(
-          { type: "pageAnalysisListener", analyzeListener },
+          { type: "pageAnalysisListener", tabId:arrayOfTabs[0].id },
           (res) => {
-            console.log(res);
+            console.log("pageAnalyzelistener response",res);
+            if(!res) return
           }
         );
         // setTimeout(()=>{console.log(page.requests)},5000)
@@ -145,6 +138,8 @@ function Popup() {
         .map((el) => el.value);
       editEntry(page.domain, toBlock);
       document.body.setAttribute("data-route", "block-list");
+      // document.body.scrollTo({left:0,top:0})
+      document.body.scrollTop = 0;
     });
   }
 
@@ -214,7 +209,7 @@ function Popup() {
     if (alreadyPresentIdx != -1) {
       newValues = newValues.map((e, idx) => {
         return idx == alreadyPresentIdx
-          ? { ...e, website: website, blockDomains: domains }
+          ? { ...e, website: website, domainsToBlock: domains }
           : e;
       });
     } else {
@@ -321,10 +316,20 @@ function Popup() {
     document.getElementById("pageUrl").innerHTML = pageInfo.url;
   }
 
-  function addRequestsListener(tabId) {
-    const listener = (reqDetails) => {
-      console.log(reqDetails);
-      if (reqDetails.tabId == tabId) {
+  
+
+  function removeListeners() {
+    alert('remove listeners');
+   chrome.runtime.sendMessage({type:"removePageReqListener"},(res)=>{
+    console.log(res) 
+    if(!res) return {}
+   })
+  }
+
+  function addPageRequestListener(){
+    
+    chrome.runtime.onMessage.addListener(({type,req:reqDetails})=>{
+      if(type == "pageRequestsList"){
         const _url = new URL(reqDetails.url);
         const domain = _url.protocol + "//" + _url.hostname;
         const domainIdx = page.requests.findIndex((r) => r.domain == domain);
@@ -342,13 +347,15 @@ function Popup() {
           // ).innerHTML += `<li title="${
           //   reqDetails.url
           // }">${reqDetails.url.substr(0, 150)+"..."}</li>`;
+
+          //todo: this will clear checkbox if another request of same domain is made after checking the box.
+          //todo: move domain to one tr(with bold text and border) and its requests to another tr
           document.querySelector(
             '#page-requests tbody tr[data-domain="' + domain + '"]'
-          ).innerHTML = `<td><label><input type="checkbox" value="${domain}" name="to-block" />${domain}</label></td><td><ul>${page.requests[
+          ).innerHTML = `<td style="vertical-align:top"><label><input type="checkbox" value="${domain}" name="to-block" />${domain}</label></td><td><ul>${page.requests[
             domainIdx
           ].urls
             .map((r) => {
-              console.log(r.href);
               return `<li title="${r.href}">${
                 r.href.substr(0, 150) + "..."
               }</li>`;
@@ -358,34 +365,19 @@ function Popup() {
           page.requests.push({ domain, urls: [_url] });
           document.querySelector(
             "#page-requests tbody"
-          ).innerHTML += `<tr data-domain="${domain}"><td><label><input type="checkbox" value="${domain}" name="to-block" />${domain}</label></td><td><ul><li title="${
-            reqDetails.url
-          }">${reqDetails.url.substr(0, 150) + "..."}</li></ul></td></tr>`;
+          ).innerHTML += `<tr data-domain="${domain}"><td style="vertical-align:top"><label><input type="checkbox" value="${domain}" name="to-block" />${domain}</label></td><td><ul><li title="${reqDetails.url}">${reqDetails.url.substr(0, 150) + "..."}</li></ul></td></tr>`;
         }
-      }
-    }
-    chrome.webRequest.onBeforeRequest.addListener(
-      listener,
-      { urls: ["<all_urls>"] }
-    );
-    return listener;
-  }
 
-  function removeListeners() {
-    // alert('remove listeners')
-    if (
-      analyzeListener &&
-      chrome.webRequest.onBeforeRequest.hasListener(analyzeListener)
-    ) {
-      // alert('removed');
-      chrome.webRequest.onBeforeRequest.removeListener(analyzeListener);
-    }
+        return Promise.resolve("thanks");
+      }
+    })
   }
 
   return {
     addClickListeners,
     showEntries,
     removeListeners,
+    addPageRequestListener
   };
 }
 
@@ -393,7 +385,8 @@ window.addEventListener("load", function () {
   const popup = Popup();
   popup.addClickListeners();
   popup.showEntries();
-  window.addEventListener("beforeunload", popup.removeListeners);
+  popup.addPageRequestListener();
+  window.addEventListener("unload", popup.removeListeners);
 });
 
 // chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
