@@ -93,7 +93,7 @@ function DomainBlockerBackground() {
           : b.url == initiator;
       });
       if (!entryItem) return;
-      console.log("request details", details);
+      console.log("request details", details); 
       let block = false;
       block = !!entryItem.domainsToBlock.find((d) => {
         const url = new URL(d.indexOf("http") == -1 ? "http://" + d : d);
@@ -162,13 +162,15 @@ function DomainBlockerBackground() {
     pageReqListener = (reqDetails) => {
       if (reqDetails.tabId == tabId) {
         console.log("sending...", reqDetails.requestId);
-        // console.log("sending...",reqDetails.requestId)
         chrome.runtime.sendMessage(
           {
             type: "pageRequestsList",
             req: reqDetails,
           },
           (response) => {
+            if(window.chrome.runtime.lastError){
+             return console.log("window.chrome.runtime.lastError")
+            }
             if (response == undefined || Object.keys(response).length == 0)
               return;
           }
@@ -222,7 +224,7 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
 
 //todo: make this work
 chrome.runtime.onConnect.addListener((port) => {
-  console.log("port", port);
+  // console.log("port", port);
   port.onDisconnect.addListener((p) => {
     console.log("removing");
     dbg.removePageRequestsListener();
@@ -233,16 +235,10 @@ chrome.runtime.onConnect.addListener((port) => {
       dbg.addPageRequestsListener(tabId);
     }
     if (type == "removePageReqListener") {
-      console.log("requet to remove");
+      console.log("request to remove");
+      dbg.removePageRequestsListener();
     }
 
     return Promise.resolve("sure");
   });
 });
-
-// chrome.runtime.connect({ name: "sample connection" });
-
-chrome.runtime.connect();
-chrome.browserAction.onClicked.addListener(tab=>{
-
-})

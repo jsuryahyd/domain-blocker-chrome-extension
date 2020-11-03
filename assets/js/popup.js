@@ -24,6 +24,15 @@ function Popup() {
   const blockPageDomains = document.getElementById("block-page-domains");
 
   let page = { domain: "", requests: [] };
+  let onMessageListener = () => {};
+  let previouslyBlockingDomains;
+
+  let bgPort;
+
+  function setPort(port) {
+    bgPort = port;
+    console.log("bgPort",bgPort)
+  }
 
   function addClickListeners() {
     addDomainBtn.addEventListener("click", addDomainInput);
@@ -89,19 +98,29 @@ function Popup() {
     analyzeLink.addEventListener("click", () => {
       //add classNames
       document.body.setAttribute("data-route", "analyze-page");
-      chrome.tabs.query({ active: true, currentWindow: true }, function (
+      chrome.tabs.query({ active: true, currentWindow: true }, async function (
         arrayOfTabs
       ) {
         console.log(arrayOfTabs);
         // chrome.tabs.reload(arrayOfTabs[0].id);
         const tabInfo = arrayOfTabs[0];
         showPageInfo(tabInfo);
-       
-        chrome.runtime.sendMessage(
-          { type: "pageAnalysisListener", tabId:arrayOfTabs[0].id },
+        const data = await loadFromStorage(["blocked"]);
+    
+        previouslyBlockingDomains =
+        ((data.blocked || []).find((i) => i.url == page.domain) || {})
+          .domainsToBlock || [];
+        bgPort.postMessage(
+          { type: "pageAnalysisListener", tabId: arrayOfTabs[0].id },
           (res) => {
-            console.log("pageAnalyzelistener response",res);
-            if(!res) return
+            if (window.chrome.runtime.lastError) {
+              return console.log(
+                "window.chrome.runtime.lastError",
+                window.chrome.runtime.lastError
+              );
+            }
+            console.log("pageAnalyzelistener response", res);
+            if (!res) return;
           }
         );
         // setTimeout(()=>{console.log(page.requests)},5000)
@@ -113,6 +132,10 @@ function Popup() {
     });
 
     reloadPage.addEventListener("click", () => {
+      document.querySelector(
+        "#page-requests tbody"
+      ).innerHTML = "";
+      page.requests = [];
       chrome.tabs.reload((...args) => {
         console.log("reloaded", args);
       });
@@ -129,6 +152,10 @@ function Popup() {
         } else {
           document.getElementById("block-page-domains").style.display = "none";
         }
+      }
+
+      if (e.target.getAttribute("name") == "to-block") {
+        selectDomainInPageRequests(e);
       }
     });
 
@@ -309,6 +336,7 @@ function Popup() {
   }
 
   function showPageInfo(pageInfo) {
+    page = {domain:"",requests:[]}
     const url = new URL(pageInfo.url);
     page.domain = url.protocol + "//" + url.hostname;
     document.getElementById("domainName").innerHTML = page.domain;
@@ -316,68 +344,80 @@ function Popup() {
     document.getElementById("pageUrl").innerHTML = pageInfo.url;
   }
 
-  
-
   function removeListeners() {
-    alert('remove listeners');
-   chrome.runtime.sendMessage({type:"removePageReqListener"},(res)=>{
-    console.log(res) 
-    if(!res) return {}
-   })
+    chrome.runtime.sendMessage({ type: "removePageReqListener" }, (res) => {
+      console.log(res);
+      if (!res) return {};
+    });
+
+    chrome.runtime.onMessage.removeListener(onMessageListener);
   }
 
-  function addPageRequestListener(){
-    
-    chrome.runtime.onMessage.addListener(({type,req:reqDetails})=>{
-      if(type == "pageRequestsList"){
+  async function addPageRequestListener() {
+    // let previouslyBlockingDomains;
+    onMessageListener = ({ type, req: reqDetails }) => {
+      // console.log("onmessage");
+      if (type == "pageRequestsList") {
         const _url = new URL(reqDetails.url);
         const domain = _url.protocol + "//" + _url.hostname;
         const domainIdx = page.requests.findIndex((r) => r.domain == domain);
+        // console.log("previouslyBlockingDomains", previouslyBlockingDomains);
         if (domainIdx >= 0) {
           page.requests[domainIdx].urls.push(_url);
-          // console.log(document.querySelector(
-          //   "#page-requests tbody tr[data-domain='" +
-          //     domain +
-          //     "'] ul"
-          // ));
-          // document.querySelector(
-          //   "#page-requests tbody tr[data-domain=" +
-          //     domain +
-          //     "] ul"
-          // ).innerHTML += `<li title="${
-          //   reqDetails.url
-          // }">${reqDetails.url.substr(0, 150)+"..."}</li>`;
 
-          //todo: this will clear checkbox if another request of same domain is made after checking the box.
           //todo: move domain to one tr(with bold text and border) and its requests to another tr
           document.querySelector(
-            '#page-requests tbody tr[data-domain="' + domain + '"]'
-          ).innerHTML = `<td style="vertical-align:top"><label><input type="checkbox" value="${domain}" name="to-block" />${domain}</label></td><td><ul>${page.requests[
-            domainIdx
-          ].urls
+            '#page-requests tbody tr[data-domain="' +
+              domain +
+              '"] td:last-child'
+          ).innerHTML = `<ul>${page.requests[domainIdx].urls
             .map((r) => {
               return `<li title="${r.href}">${
                 r.href.substr(0, 150) + "..."
               }</li>`;
             })
-            .join("")}</ul></td>`;
+            .join("")}</ul>`;
         } else {
           page.requests.push({ domain, urls: [_url] });
           document.querySelector(
             "#page-requests tbody"
-          ).innerHTML += `<tr data-domain="${domain}"><td style="vertical-align:top"><label><input type="checkbox" value="${domain}" name="to-block" />${domain}</label></td><td><ul><li title="${reqDetails.url}">${reqDetails.url.substr(0, 150) + "..."}</li></ul></td></tr>`;
+          ).insertAdjacentHTML("beforeend",`<tr data-domain="${domain}"><td style="vertical-align:top"><label><input type="checkbox"  value="${domain}" name="to-block" />${domain}</label></td><td><ul><li title="${
+            reqDetails.url
+          }">${reqDetails.url.substr(0, 150) + "..."}</li></ul></td></tr>`);
+
+          const _previouslyBlockingDomains = (()=>previouslyBlockingDomains)();
+          if (_previouslyBlockingDomains.includes(domain)) {
+            document
+              .querySelector('#page-requests tbody tr[data-domain="' +
+              domain +
+              '"] input[type="checkbox"]')
+              .setAttribute("checked", "checked");
+          }
         }
 
         return Promise.resolve("thanks");
       }
-    })
+    };
+
+       
+    chrome.runtime.onMessage.addListener(onMessageListener);
+  }
+
+  function selectDomainInPageRequests(e) {
+    console.log("---",e.target.checked,previouslyBlockingDomains)
+    if (e.target.checked) previouslyBlockingDomains.push(e.target.value);
+    else
+      previouslyBlockingDomains = previouslyBlockingDomains.filter(
+        (d) => d != e.target.value
+      );
   }
 
   return {
     addClickListeners,
     showEntries,
     removeListeners,
-    addPageRequestListener
+    addPageRequestListener,
+    setPort,
   };
 }
 
@@ -386,10 +426,11 @@ window.addEventListener("load", function () {
   popup.addClickListeners();
   popup.showEntries();
   popup.addPageRequestListener();
-  window.addEventListener("unload", popup.removeListeners);
+  const port = chrome.runtime.connect();
+  popup.setPort(port);
 });
 
-// chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+// chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 //   if (request.type == "popupInit") console.log("popup");
 //   console.log("message");
 //   console.log(

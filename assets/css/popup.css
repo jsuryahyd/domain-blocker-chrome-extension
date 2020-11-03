@@ -8,8 +8,9 @@ body {
   color: white;
   background-color: #333;
   width: 40%;
-	min-width: 450px;
-	position: relative;
+  min-width: 450px;
+  position: relative;
+  transition: transform 0.3s ease-in-out;
 }
 
 input[type="text"] {
@@ -119,76 +120,81 @@ table td {
   display: none;
 }
 
-main{
-	transition: transform 0.3s ease-in-out;
-	padding: 25px;
-	position: absolute;
+main {
+  transition: transform 0.3s ease-in-out;
+  padding: 25px;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
 }
 
+.analyze-page {
+  transition: height 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
 body[data-route="block-list"] .block-list {
   /* transform: translateX(100%); */
- 
 }
 
 body[data-route="block-list"] .analyze-page {
   transform: translateX(100%);
+  height: 350px; /*min height*/
+  overflow: hidden;
 }
 
 body[data-route="analyze-page"] .block-list {
-	transform: translateX(-100%);
- }
+  transform: translateX(-100%);
+}
 
 body[data-route="analyze-page"] .analyze-page {
- transform: translateX(0);
- /* min-height: 350px; */
+  transform: translateX(0);
+  min-height: 350px;
 }
 
-#analyze_link{
-	position: relative;
-	bottom:16px;
-	float:right;
-	
+#analyze_link {
+  position: relative;
+  bottom: 16px;
+  float: right;
 }
-#block_list_link{
-	position: relative;
-	bottom:16px;
-	float:left;
-	
+#block_list_link {
+  position: relative;
+  bottom: 16px;
+  float: left;
 }
 
-.nav-link{
-	color:#ccc
+.nav-link {
+  color: #ccc;
 }
 
-.nav-link:active,.nav-link:focus,.nav-link:hover{
-	color:#fff
+.nav-link:active,
+.nav-link:focus,
+.nav-link:hover {
+  color: #fff;
 }
-#domainName{
-	margin-top:0;
-	margin-bottom:0;
-	margin-left: 5px;
-}
-
-#pageUrl{
-	text-align: center;
-	margin-top:0;
-}
-#favicon{
-	width:30px
+#domainName {
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-left: 5px;
 }
 
-#favicon[src=""]{
-	display: none;
+#pageUrl {
+  text-align: center;
+  margin-top: 0;
+}
+#favicon {
+  width: 30px;
 }
 
-#reloadPage{
-	display: block;
-	margin:auto;
+#favicon[src=""] {
+  display: none;
 }
 
-#block-page-domains{
-	display: none;
+#reloadPage {
+  display: block;
+  margin: auto;
+}
+
+#block-page-domains {
+  display: none;
 }
