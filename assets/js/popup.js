@@ -365,9 +365,7 @@ function Popup() {
 
           //todo: move domain to one tr(with bold text and border) and its requests to another tr
           document.querySelector(
-            '#page-requests details[data-domain="' +
-              domain +
-              '"] ul'
+            '#page-requests details[data-domain="' + domain + '"] ul'
           ).innerHTML = `${page.requests[domainIdx].urls
             .map((r) => {
               return `<li title="${r.href}">${
@@ -379,7 +377,7 @@ function Popup() {
           page.requests.push({ domain, urls: [_url] });
           document
             .querySelector("#page-requests")
-            .insertAdjacentHTML("beforeend", getItemHtml(domain,reqDetails));
+            .insertAdjacentHTML("beforeend", getItemHtml(domain, reqDetails));
 
           const _previouslyBlockingDomains = (() =>
             previouslyBlockingDomains)();
@@ -401,10 +399,19 @@ function Popup() {
     function getItemHtml(domain, reqDetails) {
       return `<details data-domain="${domain}"> 
       <summary>
-      <label><input type="checkbox"  value="${domain}" name="to-block" />${domain}</label>
+      <label class="checkbox">
+      <span class="checkbox__input"><input type="checkbox"  value="${domain}" name="to-block" />
+      
+      <span class="checkbox__control">
+      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' aria-hidden="true" focusable="false">
+        <path fill='none' stroke='currentColor' stroke-width='3' d='M1.73 12.91l6.37 6.37L22.79 4.59' /></svg>
+        </span>
+        </span>
+        <span class="radio__label">${domain}</span>
+      </label>
       </summary>
       <ul><li title="${reqDetails.url}">${
-        reqDetails.url.substr(0, 150) + "..."
+        reqDetails.url
       }</li></ul>
       </details>`;
 

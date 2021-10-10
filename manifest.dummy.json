@@ -1,6 +1,6 @@
 {
     "name": "Domain Blocker",
-    "version": "0.1.0",
+    "version": "{{version}}",
     "description": "Block unwanted Domains",
   
     "manifest_version": 2,

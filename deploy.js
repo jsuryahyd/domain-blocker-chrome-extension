@@ -64,11 +64,9 @@ function Deploy() {
 
   function zipTempFolder() {
     // const zipFileName = `sticky_notes-${new Date().toLocaleDateString().replace(/\//g,"-")}.zip`
-    const zipFileName = `sticky_notes-${envVars["version"] || ""}\(${new Date()
-      .toLocaleString()
-      .replace(/\//g, "-")}\).zip`;
+    const zipFileName = `domain-blocker-${envVars["version"] || ""}.zip`;
     exec(
-      `cd .build && zip "../${zipFileName}" -r ./* -x 'manifest.source.json' -x '*.zip' && cd ..`,
+      `cd .build && zip "../${zipFileName}" -r ./* -x 'manifest.dummy.json' -x '*.zip' && cd ..`,
       (err, output, stderr) => {
         if (err) return console.error(err);
         console.log(err, output, stderr);
