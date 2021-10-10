@@ -2,9 +2,8 @@
 /// <reference path="./common_funcs.js"/>
 /// <reference path="./models/blockEntry.js"/>
 function Popup() {
-  const /** @type {HTMLInputElement}*/ siteInput = document.getElementById(
-      "site-url"
-    );
+  const /** @type {HTMLInputElement}*/ siteInput =
+      document.getElementById("site-url");
   const siteUrlError = document.getElementById("siteUrlError");
   let btnContainer = document.getElementById("btns-container");
   const addDomainBtn = document.getElementById("add-domain");
@@ -31,7 +30,7 @@ function Popup() {
 
   function setPort(port) {
     bgPort = port;
-    console.log("bgPort",bgPort)
+    console.log("bgPort", bgPort);
   }
 
   function addClickListeners() {
@@ -98,33 +97,34 @@ function Popup() {
     analyzeLink.addEventListener("click", () => {
       //add classNames
       document.body.setAttribute("data-route", "analyze-page");
-      chrome.tabs.query({ active: true, currentWindow: true }, async function (
-        arrayOfTabs
-      ) {
-        console.log(arrayOfTabs);
-        // chrome.tabs.reload(arrayOfTabs[0].id);
-        const tabInfo = arrayOfTabs[0];
-        showPageInfo(tabInfo);
-        const data = await loadFromStorage(["blocked"]);
-    
-        previouslyBlockingDomains =
-        ((data.blocked || []).find((i) => i.url == page.domain) || {})
-          .domainsToBlock || [];
-        bgPort.postMessage(
-          { type: "pageAnalysisListener", tabId: arrayOfTabs[0].id },
-          (res) => {
-            if (window.chrome.runtime.lastError) {
-              return console.log(
-                "window.chrome.runtime.lastError",
-                window.chrome.runtime.lastError
-              );
+      chrome.tabs.query(
+        { active: true, currentWindow: true },
+        async function (arrayOfTabs) {
+          console.log(arrayOfTabs);
+          // chrome.tabs.reload(arrayOfTabs[0].id);
+          const tabInfo = arrayOfTabs[0];
+          showPageInfo(tabInfo);
+          const data = await loadFromStorage(["blocked"]);
+
+          previouslyBlockingDomains =
+            ((data.blocked || []).find((i) => i.url == page.domain) || {})
+              .domainsToBlock || [];
+          bgPort.postMessage(
+            { type: "pageAnalysisListener", tabId: arrayOfTabs[0].id },
+            (res) => {
+              if (window.chrome.runtime.lastError) {
+                return console.log(
+                  "window.chrome.runtime.lastError",
+                  window.chrome.runtime.lastError
+                );
+              }
+              console.log("pageAnalyzelistener response", res);
+              if (!res) return;
             }
-            console.log("pageAnalyzelistener response", res);
-            if (!res) return;
-          }
-        );
-        // setTimeout(()=>{console.log(page.requests)},5000)
-      });
+          );
+          // setTimeout(()=>{console.log(page.requests)},5000)
+        }
+      );
     });
 
     blockListLink.addEventListener("click", () => {
@@ -132,9 +132,7 @@ function Popup() {
     });
 
     reloadPage.addEventListener("click", () => {
-      document.querySelector(
-        "#page-requests tbody"
-      ).innerHTML = "";
+      document.querySelector("#page-requests").innerHTML = "";
       page.requests = [];
       chrome.tabs.reload((...args) => {
         console.log("reloaded", args);
@@ -315,9 +313,9 @@ function Popup() {
     */
 
     //(1)
-    [
-      ...document.getElementsByClassName("additional-entry-group"),
-    ].forEach((e) => e.remove());
+    [...document.getElementsByClassName("additional-entry-group")].forEach(
+      (e) => e.remove()
+    );
     //(2)
     const additionalDomainsHtml = entry.domainsToBlock
       .slice(1)
@@ -336,7 +334,7 @@ function Popup() {
   }
 
   function showPageInfo(pageInfo) {
-    page = {domain:"",requests:[]}
+    page = { domain: "", requests: [] };
     const url = new URL(pageInfo.url);
     page.domain = url.protocol + "//" + url.hostname;
     document.getElementById("domainName").innerHTML = page.domain;
@@ -367,30 +365,31 @@ function Popup() {
 
           //todo: move domain to one tr(with bold text and border) and its requests to another tr
           document.querySelector(
-            '#page-requests tbody tr[data-domain="' +
+            '#page-requests details[data-domain="' +
               domain +
-              '"] td:last-child'
-          ).innerHTML = `<ul>${page.requests[domainIdx].urls
+              '"] ul'
+          ).innerHTML = `${page.requests[domainIdx].urls
             .map((r) => {
               return `<li title="${r.href}">${
                 r.href.substr(0, 150) + "..."
               }</li>`;
             })
-            .join("")}</ul>`;
+            .join("")}`;
         } else {
           page.requests.push({ domain, urls: [_url] });
-          document.querySelector(
-            "#page-requests tbody"
-          ).insertAdjacentHTML("beforeend",`<tr data-domain="${domain}"><td style="vertical-align:top"><label><input type="checkbox"  value="${domain}" name="to-block" />${domain}</label></td><td><ul><li title="${
-            reqDetails.url
-          }">${reqDetails.url.substr(0, 150) + "..."}</li></ul></td></tr>`);
+          document
+            .querySelector("#page-requests")
+            .insertAdjacentHTML("beforeend", getItemHtml(domain,reqDetails));
 
-          const _previouslyBlockingDomains = (()=>previouslyBlockingDomains)();
+          const _previouslyBlockingDomains = (() =>
+            previouslyBlockingDomains)();
           if (_previouslyBlockingDomains.includes(domain)) {
             document
-              .querySelector('#page-requests tbody tr[data-domain="' +
-              domain +
-              '"] input[type="checkbox"]')
+              .querySelector(
+                '#page-requests details[data-domain="' +
+                  domain +
+                  '"] input[type="checkbox"]'
+              )
               .setAttribute("checked", "checked");
           }
         }
@@ -399,12 +398,26 @@ function Popup() {
       }
     };
 
-       
+    function getItemHtml(domain, reqDetails) {
+      return `<details data-domain="${domain}"> 
+      <summary>
+      <label><input type="checkbox"  value="${domain}" name="to-block" />${domain}</label>
+      </summary>
+      <ul><li title="${reqDetails.url}">${
+        reqDetails.url.substr(0, 150) + "..."
+      }</li></ul>
+      </details>`;
+
+      // return `<tr data-domain="${domain}"><td style="vertical-align:top"><label><input type="checkbox"  value="${domain}" name="to-block" />${domain}</label></td><td><ul><li title="${
+      //   reqDetails.url
+      // }">${reqDetails.url.substr(0, 150) + "..."}</li></ul></td></tr>`
+    }
+
     chrome.runtime.onMessage.addListener(onMessageListener);
   }
 
   function selectDomainInPageRequests(e) {
-    console.log("---",e.target.checked,previouslyBlockingDomains)
+    console.log("---", e.target.checked, previouslyBlockingDomains);
     if (e.target.checked) previouslyBlockingDomains.push(e.target.value);
     else
       previouslyBlockingDomains = previouslyBlockingDomains.filter(

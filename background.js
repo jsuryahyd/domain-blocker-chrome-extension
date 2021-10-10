@@ -1,39 +1,4 @@
-// chrome.browserAction.onClicked.addListener((tab) => {
-//   // chrome.tabs.executeScript({
-//   //   file: "appIframe.js"
-//   // });
-//   // chrome.tabs.executeScript({
-//   //   code:"console.log('executeScript')"
-//   // })
-//   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-//     console.log(tabs);
-//     chrome.tabs.sendMessage(tabs[0].id, { openApp: true }, function (response) {
-//       console.log("app opened response :", response);
-//     });
-//   });
-// });
-
-// chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-//   if (request.type == "popupInit") console.log("popup");
-//   console.log("message", request, sender, sendResponse);
-//   console.log(
-//     sender.tab
-//       ? "from a content script:" + sender.tab.url
-//       : "from the extension"
-//   );
-//   if (request.greeting == "hello") sendResponse({ farewell: "goodbye" });
-
-//   // if(request.)
-//   return true;
-// });
-
-// chrome.webNavigation.onCompleted.addListener(async (details)=>{
-
-// 	const savedData = await loadFromLocal(['siteData'])
-// 	const saved = await saveToLocal({siteData:[...(savedData.siteData||[]),details]})
-// 	console.log("details",details)
-// })
-
+/// <reference path="./chrome.d.ts" />
 function loadFromLocal(keys) {
   const func = (resolve, reject) => {
     chrome.storage.local.get(keys, (data) => {
